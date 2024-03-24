@@ -11,12 +11,17 @@ public class ProductController : ControllerBase
     // สร้าง Object ของ ApplicationDbContext
     private readonly ApplicationDbContext _context;
 
-    // IWebHostEnviroment 
+    // IWebHostEnvironment คืออะไร
+    // IWebHostEnvironment เป็นอินเทอร์เฟซใน ASP.NET Core ที่ใช้สำหรับดึงข้อมูลเกี่ยวกับสภาพแวดล้อมการโฮสต์เว็บแอปพลิเคชัน
+    // ContentRootPath: เส้นทางไปยังโฟลเดอร์รากของเว็บแอปพลิเคชัน
+    // WebRootPath: เส้นทางไปยังโฟลเดอร์ wwwroot ของเว็บแอปพลิเคชัน
+    private readonly IWebHostEnvironment _env;
 
     // สร้าง Constructor รับค่า ApplicationDbContext
-    public ProductController(ApplicationDbContext context)
+    public ProductController(ApplicationDbContext context, IWebHostEnvironment env)
     {
         _context = context;
+        _env = env;
     }
 
     // ทดสอบเขียนฟังก์ชันการเชื่อมต่อ database
@@ -89,16 +94,39 @@ public class ProductController : ControllerBase
     // ฟังก์ชันสำหรับการเพิ่มข้อมูลสินค้า
     // POST: /api/Product
     [HttpPost]
-    public ActionResult<product> CreateProduct(product product)
+    public async Task<ActionResult<product>> CreateProduct([FromForm] product product, IFormFile image)
     {
         // เพิ่มข้อมูลลงในตาราง Products
         _context.products.Add(product);
+
+        // ตรวจสอบว่ามีการอัพโหลดไฟล์รูปภาพหรือไม่
+        if(image != null){
+            // กำหนดชื่อไฟล์รูปภาพใหม่
+            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+
+            // บันทึกไฟล์รูปภาพ
+            string uploadFolder = Path.Combine(_env.ContentRootPath, "uploads");
+
+            // ตรวจสอบว่าโฟลเดอร์ uploads มีหรือไม่
+            if (!Directory.Exists(uploadFolder))
+            {
+                Directory.CreateDirectory(uploadFolder);
+            }
+
+            using (var fileStream = new FileStream(Path.Combine(uploadFolder, fileName), FileMode.Create))
+            {
+                await image.CopyToAsync(fileStream);
+            }
+
+            // บันทึกชื่อไฟล์รูปภาพลงในฐานข้อมูล
+            product.product_picture = fileName;
+        }
+
         _context.SaveChanges();
 
         // ส่งข้อมูลกลับไปให้ผู้ใช้
         return Ok(product);
     }
-
     // ฟังก์ชันสำหรับการแก้ไขข้อมูลสินค้า
     // PUT: /api/Product/{id}
     [HttpPut("{id}")]
