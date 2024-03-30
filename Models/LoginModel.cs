@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace StoreAPI.Models;
+namespace StoreAPI.Data;
 
 public class LoginModel
 {

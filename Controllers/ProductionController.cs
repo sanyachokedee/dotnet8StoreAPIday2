@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StoreAPI.Data;
 using StoreAPI.Models;
 
 namespace StoreAPI.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
+[Authorize] // กำหนดให้ต้องมีการ Login ก่อนเข้าถึง API ทั้งหมด
+// [Authorize(Roles = UserRoles.Admin)] // กำหนดให้เฉพาะ Admin เท่านั้นที่สามารถเข้าถึง API นี้ได้
+[ApiController] // กำหนดให้ Class นี้เป็น API Controller
+[Route("api/[controller]")] // กำหนด Route ของ API Controller
 public class ProductController : ControllerBase
 {
     // สร้าง Object ของ ApplicationDbContext
@@ -24,6 +27,7 @@ public class ProductController : ControllerBase
         _env = env;
     }
 
+    [AllowAnonymous]
     // ทดสอบเขียนฟังก์ชันการเชื่อมต่อ database
     // GET: /api/Product/testconnectdb
     [HttpGet("testconnectdb")]
@@ -53,7 +57,6 @@ public class ProductController : ControllerBase
         // var products = _context.products.Where(p => p.unit_price > 45000).ToList();
 
         // แบบเชื่อมกับตารางอื่น products เชื่อมกับ categories
-        // Ref https://youtu.be/VcnFNGCTesI?t=10008
         var products = _context.products
             .Join(
                 _context.categories,
@@ -127,6 +130,7 @@ public class ProductController : ControllerBase
         // ส่งข้อมูลกลับไปให้ผู้ใช้
         return Ok(product);
     }
+
     // ฟังก์ชันสำหรับการแก้ไขข้อมูลสินค้า
     // PUT: /api/Product/{id}
     [HttpPut("{id}")]
